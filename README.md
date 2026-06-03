@@ -161,3 +161,209 @@ flowchart TD
 ---
 
 > 📚 **Referências:** [Amazon EC2 Docs](https://docs.aws.amazon.com/ec2/) · [Amazon EBS Docs](https://docs.aws.amazon.com/ebs/) · [AMI Docs](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/AMIs.html)
+
+---
+
+## ⚙️ AWS Step Functions — Workflows Automatizados
+
+O **AWS Step Functions** é um serviço de orquestração serverless que permite coordenar múltiplos serviços AWS em fluxos de trabalho visuais, chamados de **State Machines** (Máquinas de Estado).
+
+---
+
+## 🧩 4. AWS Step Functions
+
+### O que é?
+
+O Step Functions permite construir aplicações distribuídas e de longa duração combinando serviços como Lambda, ECS, DynamoDB, SNS, SQS e muito mais, sem a necessidade de gerenciar servidores.
+
+### Principais Conceitos
+
+- **State Machine:** Definição do fluxo de trabalho em JSON/YAML usando a linguagem **Amazon States Language (ASL)**.
+- **States (Estados):** Cada etapa do fluxo. Podem ser de tarefa, escolha, espera, paralelo, mapa, pass, sucesso ou falha.
+- **Execution:** Uma instância em execução de uma State Machine.
+- **Transitions:** As transições entre estados, podendo ser condicionais ou sequenciais.
+- **Integrations:** Conexões nativas com mais de 220 serviços AWS.
+
+### Tipos de Workflow
+
+```mermaid
+graph TD
+SF[⚙️ AWS Step Functions]
+
+SF --> STD["🐢 Standard Workflow<br/>Duração: até 1 ano<br/>Execução: Exatamente uma vez<br/>Auditoria completa no histórico"]
+SF --> EXP["⚡ Express Workflow<br/>Duração: até 5 minutos<br/>Alta taxa de eventos<br/>Pelo menos uma vez"]
+
+EXP --> SYNC["🔄 Synchronous Express<br/>Aguarda resultado<br/>Ideal para APIs"]
+EXP --> ASYNC["📨 Asynchronous Express<br/>Não aguarda resultado<br/>Ideal para event-driven"]
+
+style SF fill:#ff9900,color:#fff
+style STD fill:#1a73e8,color:#fff
+style EXP fill:#34a853,color:#fff
+style SYNC fill:#4285f4,color:#fff
+style ASYNC fill:#4285f4,color:#fff
+```
+
+### Tipos de Estado (States)
+
+```mermaid
+graph LR
+ASL["📄 Amazon States Language"]
+
+ASL --> TASK["⚙️ Task<br/>Executa trabalho:<br/>Lambda, ECS, API..."]
+ASL --> CHOICE["🔀 Choice<br/>Lógica condicional<br/>(if/else)"]
+ASL --> WAIT["⏳ Wait<br/>Pausa por tempo<br/>determinado"]
+ASL --> PARALLEL["🔀 Parallel<br/>Executa ramos<br/>em paralelo"]
+ASL --> MAP["🗺️ Map<br/>Itera sobre<br/>uma lista"]
+ASL --> PASS["➡️ Pass<br/>Passa dados<br/>sem processar"]
+ASL --> SUCCEED["✅ Succeed<br/>Encerra com<br/>sucesso"]
+ASL --> FAIL["❌ Fail<br/>Encerra com<br/>falha"]
+
+style ASL fill:#ff9900,color:#fff
+style TASK fill:#34a853,color:#fff
+style CHOICE fill:#1a73e8,color:#fff
+style PARALLEL fill:#ea4335,color:#fff
+style MAP fill:#9c27b0,color:#fff
+```
+
+---
+
+## 🔄 Fluxo de Execução de uma State Machine
+
+```mermaid
+flowchart TD
+START(["▶️ StartExecution"]) --> S1
+
+S1["⚙️ Task State\nInvocar Lambda\n(validar pedido)"]
+S1 -->|Sucesso| S2
+S1 -->|Erro| ERR
+
+S2["🔀 Choice State\nPedido válido?"]
+S2 -->|Sim| S3
+S2 -->|Não| S4
+
+S3["🔀 Parallel State\nProcessamento paralelo"]
+S3 --> S3A["📦 Reservar estoque\n(Lambda)"]
+S3 --> S3B["💳 Processar pagamento\n(Lambda)"]
+S3A --> S5
+S3B --> S5
+
+S4["📨 Task State\nNotificar cliente\n(SNS)"]
+S4 --> FAIL_END
+
+S5["⏳ Wait State\n30 segundos"]
+S5 --> S6
+
+S6["⚙️ Task State\nAtualizar DynamoDB\n(status do pedido)"]
+S6 --> SUCCESS_END
+
+ERR["❌ Fail State\nErro na validação"]
+
+SUCCESS_END(["✅ Execution Succeeded"])
+FAIL_END(["❌ Execution Failed"])
+
+style START fill:#ff9900,color:#fff
+style SUCCESS_END fill:#34a853,color:#fff
+style FAIL_END fill:#ea4335,color:#fff
+style ERR fill:#ea4335,color:#fff
+style S2 fill:#1a73e8,color:#fff
+style S3 fill:#9c27b0,color:#fff
+```
+
+---
+
+## 🔗 Integrações do Step Functions com outros Serviços AWS
+
+O Step Functions oferece dois tipos de integração:
+
+- **Optimistic Integration:** Chama o serviço e continua sem aguardar.
+- **`.sync` Integration:** Aguarda o serviço terminar antes de avançar de estado.
+- **`.waitForTaskToken`:** Pausa o fluxo até receber um callback externo (útil para aprovações humanas).
+
+```mermaid
+graph TD
+SF["⚙️ State Machine"]
+
+SF --> LAMBDA["λ AWS Lambda\nFunções serverless"]
+SF --> ECS["🐳 Amazon ECS / Fargate\nContainers"]
+SF --> DDB["🗄️ Amazon DynamoDB\nBanco NoSQL"]
+SF --> SNS["📢 Amazon SNS\nNotificações"]
+SF --> SQS["📬 Amazon SQS\nFilas de mensagens"]
+SF --> S3["🪣 Amazon S3\nArmazenamento de objetos"]
+SF --> GLUE["🔧 AWS Glue\nETL de dados"]
+SF --> BEDROCK["🤖 Amazon Bedrock\nIA Generativa"]
+
+style SF fill:#ff9900,color:#fff
+style LAMBDA fill:#1a73e8,color:#fff
+style ECS fill:#34a853,color:#fff
+style DDB fill:#ea4335,color:#fff
+style SNS fill:#fbbc04,color:#000
+style SQS fill:#fbbc04,color:#000
+style BEDROCK fill:#9c27b0,color:#fff
+```
+
+---
+
+## 🧪 Validação: Executando uma State Machine com Lambda
+
+### Etapas Realizadas
+
+| Etapa | Ação | Serviço |
+|-------|------|---------|
+| 1 | Criar função Lambda para processar a tarefa | AWS Lambda |
+| 2 | Criar uma State Machine no Step Functions | Step Functions |
+| 3 | Definir os estados em Amazon States Language (JSON) | Step Functions |
+| 4 | Configurar a permissão IAM para o Step Functions invocar o Lambda | AWS IAM |
+| 5 | Executar a State Machine e monitorar pelo console | Step Functions |
+| 6 | Verificar logs de execução no histórico de eventos | Step Functions |
+
+### Exemplo de Definição de Estado (ASL)
+
+```json
+{
+  "Comment": "Exemplo de State Machine com Lambda",
+  "StartAt": "ValidarPedido",
+  "States": {
+    "ValidarPedido": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:us-east-1:123456789:function:validar-pedido",
+      "Next": "VerificarResultado"
+    },
+    "VerificarResultado": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.valido",
+          "BooleanEquals": true,
+          "Next": "PedidoAprovado"
+        }
+      ],
+      "Default": "PedidoRejeitado"
+    },
+    "PedidoAprovado": {
+      "Type": "Succeed"
+    },
+    "PedidoRejeitado": {
+      "Type": "Fail",
+      "Error": "PedidoInvalido",
+      "Cause": "Pedido não passou na validação"
+    }
+  }
+}
+```
+
+---
+
+## 🆚 Comparativo: Step Functions vs Outras Abordagens
+
+| Critério | Step Functions | Lambda Encadeado | Fila SQS Pura |
+|----------|---------------|------------------|---------------|
+| Visibilidade do fluxo | ✅ Visual e auditável | ❌ Sem visibilidade | ❌ Sem visibilidade |
+| Tratamento de erros | ✅ Nativo (Retry/Catch) | ⚠️ Manual no código | ⚠️ Manual |
+| Longa duração | ✅ Até 1 ano | ❌ Máx. 15 min | ✅ Sim |
+| Orquestração paralela | ✅ Estado Parallel/Map | ⚠️ Complexo | ❌ Difícil |
+| Custo por execução | 💲 Por transição de estado | 💲 Por invocação | 💲 Por mensagem |
+| Casos de uso ideais | Fluxos complexos | Pipelines simples | Desacoplamento |
+
+---
+
+> 📚 **Referências:** [AWS Step Functions Docs](https://docs.aws.amazon.com/step-functions/) · [Amazon States Language](https://docs.aws.amazon.com/step-functions/latest/dg/concepts-amazon-states-language.html) · [Step Functions Workshops](https://catalog.workshops.aws/stepfunctions/en-US)
