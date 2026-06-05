@@ -367,3 +367,180 @@ style BEDROCK fill:#9c27b0,color:#fff
 ---
 
 > 📚 **Referências:** [AWS Step Functions Docs](https://docs.aws.amazon.com/step-functions/) · [Amazon States Language](https://docs.aws.amazon.com/step-functions/latest/dg/concepts-amazon-states-language.html) · [Step Functions Workshops](https://catalog.workshops.aws/stepfunctions/en-US)
+
+---
+
+## 🏗️ AWS CloudFormation — Infraestrutura como Código (IaC)
+
+O **AWS CloudFormation** é um serviço que permite modelar, provisionar e gerenciar recursos da AWS e de terceiros através de **templates declarativos** (JSON ou YAML). Em vez de criar recursos manualmente pelo console, você descreve a infraestrutura desejada e o CloudFormation cuida do provisionamento e da orquestração automaticamente.
+
+---
+
+### 📦 5. Conceitos Fundamentais
+
+| Conceito | Descrição |
+|---|---|
+| **Template** | Arquivo JSON/YAML que descreve os recursos a serem provisionados. |
+| **Stack** | Conjunto de recursos AWS criados, atualizados ou deletados como uma unidade a partir de um template. |
+| **Change Set** | Prévia das alterações que serão aplicadas antes de executar um update na Stack. |
+| **Drift Detection** | Identifica divergências entre o estado real dos recursos e o template que os originou. |
+| **Stack Set** | Permite implantar Stacks em múltiplas contas e regiões AWS de forma centralizada. |
+
+---
+
+### 🧱 Estrutura de um Template CloudFormation
+
+```yaml
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Exemplo de template CloudFormation"
+
+Parameters:
+  InstanceType:
+    Type: String
+    Default: t2.micro
+    AllowedValues: [t2.micro, t2.small, t2.medium]
+    Description: Tipo da instância EC2
+
+Resources:
+  MinhaInstanciaEC2:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceType
+      ImageId: ami-0abcdef1234567890
+      Tags:
+        - Key: Name
+          Value: MinhaInstancia
+
+Outputs:
+  InstanceId:
+    Description: ID da instância criada
+    Value: !Ref MinhaInstanciaEC2
+```
+
+As **seções principais** de um template são:
+
+- **AWSTemplateFormatVersion**: Versão do formato do template.
+- **Description**: Descrição legível do que o template faz.
+- **Parameters**: Entradas dinâmicas que permitem reutilizar o template.
+- **Resources** *(obrigatório)*: Declaração dos recursos AWS a serem criados.
+- **Outputs**: Valores exportados após a criação da Stack (ex.: ARNs, IPs, URLs).
+- **Mappings**: Mapeamentos estáticos (ex.: AMI por região).
+- **Conditions**: Lógica condicional para criação de recursos.
+
+---
+
+### 🔄 Ciclo de Vida de uma Stack
+
+```mermaid
+flowchart TD
+    A([👤 Usuário]) --> B[Escreve o Template\nJSON / YAML]
+    B --> C{Validar Template}
+    C -- Inválido --> B
+    C -- Válido --> D[Criar / Atualizar Stack\nvia Console, CLI ou SDK]
+    D --> E[CloudFormation analisa\ndependências entre recursos]
+    E --> F[Provisiona recursos\nem ordem lógica]
+    F --> G{Todos os recursos\nforam criados com sucesso?}
+    G -- Sim --> H([✅ Stack em estado\nCREATE_COMPLETE])
+    G -- Não --> I[Rollback automático\nde todos os recursos]
+    I --> J([❌ Stack em estado\nROLLBACK_COMPLETE])
+
+    style H fill:#2d8a4e,color:#fff
+    style J fill:#c0392b,color:#fff
+```
+
+---
+
+### 🔥 Criando Stacks de Firewall (Security Groups) no CloudFormation
+
+Um dos casos de uso mais comuns é definir **Security Groups** como código, garantindo consistência e rastreabilidade das regras de rede.
+
+```yaml
+Resources:
+  MeuSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "Security Group para servidor web"
+      VpcId: !Ref MinhaVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+```
+
+#### Fluxo de aplicação de regras do Security Group
+
+```mermaid
+flowchart LR
+    Internet(["🌐 Internet"]) -->|HTTP :80\nHTTPS :443| SG["🔥 Security Group\n(Firewall Virtual)"]
+    SG -->|Tráfego permitido| EC2["🖥️ Instância EC2"]
+    EC2 -->|Todo tráfego de saída\npermitido| Internet
+    Bloqueado(["🚫 Outras portas\nbloqueadas"]) -.->|Negado pelo SG| EC2
+
+    style SG fill:#e67e22,color:#fff
+    style EC2 fill:#2980b9,color:#fff
+    style Bloqueado fill:#c0392b,color:#fff
+```
+
+---
+
+### 🆚 CloudFormation vs Abordagens Alternativas
+
+| Critério | CloudFormation | Terraform | Console Manual |
+|---|---|---|---|
+| **IaC nativo AWS** | ✅ Integrado | ⚠️ Terceiro | ❌ |
+| **Multi-cloud** | ❌ Apenas AWS | ✅ Sim | ✅ (via console cada) |
+| **Rollback automático** | ✅ Nativo | ⚠️ Manual | ❌ |
+| **Change Sets** | ✅ Pré-visualização | ✅ `plan` | ❌ |
+| **Drift Detection** | ✅ Nativo | ⚠️ Via `refresh` | ❌ |
+| **Curva de aprendizado** | 🟡 Média | 🟡 Média | 🟢 Baixa |
+| **Rastreabilidade** | ✅ Tags + Events | ✅ State file | ❌ |
+
+---
+
+### 🧪 Etapas Práticas — Primeira Stack com CloudFormation
+
+| Etapa | Ação | Serviço / Ferramenta |
+|---|---|---|
+| 1 | Escrever o template YAML/JSON | Editor local ou AWS CloudShell |
+| 2 | Validar o template | `aws cloudformation validate-template` |
+| 3 | Criar a Stack | Console AWS ou AWS CLI |
+| 4 | Monitorar os eventos de criação | CloudFormation Console → Events |
+| 5 | Verificar os recursos criados | CloudFormation Console → Resources |
+| 6 | Gerar um Change Set para atualização | CloudFormation → Change Sets |
+| 7 | Executar Drift Detection | CloudFormation → Stack Actions |
+| 8 | Deletar a Stack (limpeza) | CloudFormation → Delete Stack |
+
+---
+
+### 🔗 Integração do CloudFormation com os Serviços já Estudados
+
+```mermaid
+flowchart TD
+    CF["☁️ AWS CloudFormation\n(Template IaC)"]
+    CF --> EC2["🖥️ EC2\n(Instâncias)"]
+    CF --> EBS["💾 EBS\n(Volumes)"]
+    CF --> AMI["💿 AMI\n(Imagem base\nda instância)"]
+    CF --> SG["🔥 Security Groups\n(Firewall)"]
+    CF --> SF["⚙️ Step Functions\n(Workflows)"]
+    CF --> IAM["🔑 IAM\n(Permissões)"]
+
+    EC2 --> EBS
+    AMI --> EC2
+    SG --> EC2
+
+    style CF fill:#ff9900,color:#000,font-weight:bold
+```
+
+> **Insight:** O CloudFormation atua como a **camada de orquestração declarativa** que une todos os serviços estudados neste bootcamp, permitindo reproduzir ambientes completos de forma consistente e auditável.
+
+---
+
+📚 **Referências:** [AWS CloudFormation Docs](https://docs.aws.amazon.com/cloudformation/) · [Template Reference](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/template-reference.html) · [CloudFormation Workshop](https://catalog.workshops.aws/cfn101/en-US)
