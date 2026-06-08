@@ -4,6 +4,46 @@ Anotações e resumos do curso **GFT - Fundamentos de Cloud com AWS**, cobrindo 
 
 ---
 
+## 📋 Índice
+
+- [☁️ EC2, EBS e AMI — Fundamentos de Infraestrutura](#ec2-ebs-e-ami-fundamentos-de-infraestrutura)
+- [🚀 1. Amazon EC2 (Elastic Compute Cloud)](#1-amazon-ec2-elastic-compute-cloud)
+  - [Principais Características](#principais-características)
+  - [Tipos de Instância EC2](#tipos-de-instância-ec2)
+- [💾 2. Amazon EBS (Elastic Block Store)](#2-amazon-ebs-elastic-block-store)
+  - [Conceitos Chave](#conceitos-chave)
+  - [Tipos de Volume EBS](#tipos-de-volume-ebs)
+  - [Ciclo de Vida de um Snapshot EBS](#ciclo-de-vida-de-um-snapshot-ebs)
+- [💿 3. AMI (Amazon Machine Image)](#3-ami-amazon-machine-image)
+  - [Componentes de uma AMI](#componentes-de-uma-ami)
+  - [Ciclo de Vida de uma AMI](#ciclo-de-vida-de-uma-ami)
+- [🔗 Relacionamento entre os Componentes](#relacionamento-entre-os-componentes)
+  - [Resumo do Fluxo](#resumo-do-fluxo)
+- [⚙️ AWS Step Functions — Workflows Automatizados](#aws-step-functions-workflows-automatizados)
+- [🧩 4. AWS Step Functions](#4-aws-step-functions)
+  - [O que é?](#o-que-é)
+  - [Principais Conceitos](#principais-conceitos)
+  - [Tipos de Workflow](#tipos-de-workflow)
+  - [Tipos de Estado (States)](#tipos-de-estado-states)
+- [🔄 Fluxo de Execução de uma State Machine](#fluxo-de-execução-de-uma-state-machine)
+- [🔗 Integrações do Step Functions com outros Serviços AWS](#integrações-do-step-functions-com-outros-serviços-aws)
+- [🧪 Validação: Executando uma State Machine com Lambda](#validação-executando-uma-state-machine-com-lambda)
+  - [Etapas Realizadas](#etapas-realizadas)
+  - [Exemplo de Definição de Estado (ASL)](#exemplo-de-definição-de-estado-asl)
+- [🆚 Comparativo: Step Functions vs Outras Abordagens](#comparativo-step-functions-vs-outras-abordagens)
+- [🏗️ AWS CloudFormation — Infraestrutura como Código (IaC)](#aws-cloudformation-infraestrutura-como-código-iac)
+  - [📦 5. Conceitos Fundamentais](#5-conceitos-fundamentais)
+  - [🧱 Estrutura de um Template CloudFormation](#estrutura-de-um-template-cloudformation)
+  - [🔄 Ciclo de Vida de uma Stack](#ciclo-de-vida-de-uma-stack)
+  - [🔥 Criando Stacks de Firewall (Security Groups) no CloudFormation](#criando-stacks-de-firewall-security-groups-no-cloudformation)
+    - [Fluxo de aplicação de regras do Security Group](#fluxo-de-aplicação-de-regras-do-security-group)
+  - [🆚 CloudFormation vs Abordagens Alternativas](#cloudformation-vs-abordagens-alternativas)
+  - [🧪 Etapas Práticas — Primeira Stack com CloudFormation](#etapas-práticas-primeira-stack-com-cloudformation)
+  - [🔗 Integração do CloudFormation com os Serviços já Estudados](#integração-do-cloudformation-com-os-serviços-já-estudados)
+
+---
+
+
 ## ☁️ EC2, EBS e AMI — Fundamentos de Infraestrutura
 
 Visão geral técnica e prática sobre os pilares fundamentais da infraestrutura computacional na AWS: **Amazon Elastic Compute Cloud (EC2)**, **Amazon Elastic Block Store (EBS)** e **Amazon Machine Images (AMI)**.
