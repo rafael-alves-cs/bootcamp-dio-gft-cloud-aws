@@ -41,6 +41,25 @@ Anotações e resumos do curso **GFT - Fundamentos de Cloud com AWS**, cobrindo 
   - [🧪 Etapas Práticas — Primeira Stack com CloudFormation](#etapas-práticas-primeira-stack-com-cloudformation)
   - [🔗 Integração do CloudFormation com os Serviços já Estudados](#integração-do-cloudformation-com-os-serviços-já-estudados)
 
+- [🪣 Amazon S3 — Armazenamento de Objetos na Nuvem](#amazon-s3-armazenamento-de-objetos-na-nuvem)
+  - [📦 Conceitos Fundamentais do S3](#conceitos-fundamentais-do-s3)
+  - [🔐 Políticas e Controle de Acesso](#políticas-e-controle-de-acesso)
+  - [⚡ S3 Event Notifications](#s3-event-notifications)
+  - [🔄 Ciclo de Vida de um Objeto no S3](#ciclo-de-vida-de-um-objeto-no-s3)
+- [λ AWS Lambda — Computação Serverless](#aws-lambda-computação-serverless)
+  - [🧠 Conceitos Fundamentais do Lambda](#conceitos-fundamentais-do-lambda)
+  - [📐 Limites e Configurações](#limites-e-configurações)
+  - [🔄 Ciclo de Execução de uma Função Lambda](#ciclo-de-execução-de-uma-função-lambda)
+- [🔗 Integração S3 + Lambda — Processamento Orientado a Eventos](#integração-s3--lambda-processamento-orientado-a-eventos)
+  - [🔄 Fluxo de Processamento de Arquivos](#fluxo-de-processamento-de-arquivos)
+  - [📝 Registro no DynamoDB](#registro-no-dynamodb)
+  - [🧪 Etapas Práticas — Upload com Processamento e Registro](#etapas-práticas-upload-com-processamento-e-registro)
+- [🔭 S3 Object Lambda — Transformação em Tempo Real](#s3-object-lambda-transformação-em-tempo-real)
+  - [🔄 Fluxo do S3 Object Lambda](#fluxo-do-s3-object-lambda)
+  - [🆚 S3 Padrão vs S3 Object Lambda](#s3-padrão-vs-s3-object-lambda)
+- [🖥️ LocalStack — Desenvolvimento e Testes Locais](#localstack-desenvolvimento-e-testes-locais)
+  - [⚙️ Configuração e Comandos Essenciais](#configuração-e-comandos-essenciais)
+  - [🔄 Fluxo de Trabalho com LocalStack](#fluxo-de-trabalho-com-localstack)
 ---
 
 
@@ -584,3 +603,316 @@ flowchart TD
 ---
 
 📚 **Referências:** [AWS CloudFormation Docs](https://docs.aws.amazon.com/cloudformation/) · [Template Reference](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/template-reference.html) · [CloudFormation Workshop](https://catalog.workshops.aws/cfn101/en-US)
+
+
+---
+
+## 🪣 Amazon S3 — Armazenamento de Objetos na Nuvem
+
+O **Amazon Simple Storage Service (S3)** é um serviço de armazenamento de objetos com escalabilidade, disponibilidade de dados, segurança e performance líderes do setor. É o backbone de armazenamento para inúmeros serviços da AWS, incluindo backups, data lakes, hospedagem de sites estáticos e gatilhos de eventos serverless.
+
+### 📦 Conceitos Fundamentais do S3
+
+| Conceito | Descrição |
+|---|---|
+| **Bucket** | Contêiner lógico para armazenar objetos. O nome é globalmente único. |
+| **Objeto** | A unidade de armazenamento — composto por dados, metadados e uma chave (key). |
+| **Key** | O identificador único de um objeto dentro de um bucket (equivale ao "caminho" do arquivo). |
+| **Região** | Localização física onde o bucket e seus objetos são armazenados. |
+| **Versioning** | Mantém múltiplas versões de um mesmo objeto, permitindo recuperação de versões anteriores. |
+| **Storage Classes** | Diferentes níveis de armazenamento com trade-offs de custo x disponibilidade (S3 Standard, IA, Glacier, etc.). |
+| **Presigned URL** | URL temporária que concede acesso a um objeto privado sem necessidade de credenciais AWS. |
+
+### 🔐 Políticas e Controle de Acesso
+
+O S3 oferece múltiplas camadas de segurança que podem ser combinadas:
+
+- **Bucket Policy**: Políticas baseadas em recursos (JSON) que definem permissões a nível de bucket ou objeto para contas e serviços AWS.
+- **IAM Policy**: Permissões atribuídas a usuários, grupos ou roles IAM para acessar recursos S3.
+- **ACL (Access Control List)**: Controle de acesso legado por objeto ou bucket (recomenda-se usar Bucket Policy).
+- **Block Public Access**: Configuração que bloqueia qualquer acesso público, sobrescrevendo policies existentes.
+
+### ⚡ S3 Event Notifications
+
+Um dos recursos mais poderosos do S3 é a capacidade de **emitir notificações de eventos** quando objetos são criados, removidos ou restaurados. Esses eventos podem acionar:
+
+- **AWS Lambda** (processamento serverless)
+- **Amazon SQS** (enfileiramento de mensagens)
+- **Amazon SNS** (notificações)
+- **Amazon EventBridge** (roteamento avançado de eventos)
+
+### 🔄 Ciclo de Vida de um Objeto no S3
+
+```mermaid
+flowchart LR
+    Upload(["📤 Upload do Objeto"]) --> Bucket[("🪣 S3 Bucket")]
+    Bucket --> Versioning{"Versioning
+Ativado?"}
+    Versioning -- Sim --> NewVersion["🔢 Nova Versão Criada"]
+    Versioning -- Não --> Overwrite["♻️ Objeto Substituído"]
+    NewVersion --> Event["⚡ Evento S3 Disparado"]
+    Overwrite --> Event
+    Event --> Lambda["λ Lambda / SQS / SNS"]
+    Bucket --> Lifecycle["⏳ Lifecycle Policy"]
+    Lifecycle --> Transition["🔄 Transição de Storage Class
+(Standard → IA → Glacier)"]
+    Lifecycle --> Expiration["🗑️ Expiração / Exclusão"]
+
+    style Bucket fill:#ff9900,color:#000,font-weight:bold
+    style Event fill:#e535ab,color:#fff,font-weight:bold
+    style Lambda fill:#f90,color:#000,font-weight:bold
+```
+
+📚 **Referências:** [Amazon S3 Docs](https://docs.aws.amazon.com/s3/) · [S3 Event Notifications](https://docs.aws.amazon.com/AmazonS3/latest/userguide/EventNotifications.html) · [S3 Storage Classes](https://aws.amazon.com/s3/storage-classes/)
+
+---
+
+## λ AWS Lambda — Computação Serverless
+
+O **AWS Lambda** é um serviço de computação serverless que executa código em resposta a eventos, gerenciando automaticamente a infraestrutura subjacente. Você paga apenas pelo tempo de computação consumido — sem custos quando o código não está em execução.
+
+### 🧠 Conceitos Fundamentais do Lambda
+
+| Conceito | Descrição |
+|---|---|
+| **Função** | Unidade de código implantável. Definida por código + configuração + permissões IAM. |
+| **Handler** | Ponto de entrada da função — o método invocado pelo Lambda ao receber um evento. |
+| **Event** | Objeto JSON que contém dados de entrada para a função (ex.: metadados do objeto S3). |
+| **Context** | Objeto que fornece informações sobre a invocação, função e ambiente de execução. |
+| **Trigger** | Serviço ou recurso que invoca a função (S3, API Gateway, SQS, EventBridge, etc.). |
+| **Layer** | Componente reutilizável (bibliotecas, runtimes) que pode ser compartilhado entre funções. |
+| **Cold Start** | Latência inicial quando uma nova instância de execução é inicializada pela primeira vez. |
+| **Concorrência** | Número de instâncias da função em execução simultânea. |
+
+### 📐 Limites e Configurações
+
+| Parâmetro | Limite |
+|---|---|
+| Timeout máximo | 15 minutos |
+| Memória | 128 MB a 10.240 MB |
+| Tamanho do pacote de implantação | 50 MB (zip) / 250 MB (descomprimido) |
+| Armazenamento temporário (/tmp) | 512 MB a 10.240 MB |
+| Concorrência padrão por região | 1.000 execuções simultâneas |
+| Variáveis de ambiente | Máx. 4 KB |
+
+### 🔄 Ciclo de Execução de uma Função Lambda
+
+```mermaid
+flowchart TD
+    Trigger(["⚡ Evento Disparado
+(ex: objeto enviado ao S3)"]) --> Check{"Instância
+Disponível?"}
+    Check -- Não --> ColdStart["🧊 Cold Start
+(Init: download código,
+init runtime, init handler)"]
+    Check -- Sim --> WarmStart["🔥 Warm Start
+(reutiliza instância existente)"]
+    ColdStart --> Execute["▶️ Execução do Handler"]
+    WarmStart --> Execute
+    Execute --> Success{"Execução
+Bem-sucedida?"}
+    Success -- Sim --> Return["✅ Retorna resposta / resultado"]
+    Success -- Não --> Retry{"Retry
+Policy?"}
+    Retry -- Sim --> Execute
+    Retry -- Não --> DLQ["💀 Dead Letter Queue
+(SQS / SNS)"]
+    Return --> Idle["💤 Instância em espera
+(pode ser reutilizada)"]
+
+    style Trigger fill:#e535ab,color:#fff,font-weight:bold
+    style Execute fill:#ff9900,color:#000,font-weight:bold
+    style ColdStart fill:#4a90d9,color:#fff,font-weight:bold
+```
+
+📚 **Referências:** [AWS Lambda Docs](https://docs.aws.amazon.com/lambda/) · [Lambda Best Practices](https://docs.aws.amazon.com/lambda/latest/dg/best-practices.html) · [Lambda Quotas](https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-limits.html)
+
+---
+
+## 🔗 Integração S3 + Lambda — Processamento Orientado a Eventos
+
+A combinação de **S3 + Lambda** é um dos padrões serverless mais utilizados na AWS. Ela permite construir pipelines de processamento de arquivos totalmente gerenciados, sem provisionamento de servidores, que escalam automaticamente conforme o volume de uploads.
+
+### 🔄 Fluxo de Processamento de Arquivos
+
+```mermaid
+flowchart LR
+    Client(["👤 Cliente / Aplicação"]) -->|"PUT objeto"| S3Input[("🪣 S3 Bucket
+(Input)")]
+    S3Input -->|"s3:ObjectCreated
+Evento"| Lambda["λ Função Lambda
+(Processamento)"]
+    Lambda -->|"Lê objeto"| S3Input
+    Lambda -->|"Escreve resultado"| S3Output[("🪣 S3 Bucket
+(Output)")]
+    Lambda -->|"Registra metadados"| DynamoDB[("🗄️ DynamoDB
+(Log / Registro)")]
+    Lambda -->|"Falha"| DLQ["💀 SQS DLQ"]
+
+    style S3Input fill:#ff9900,color:#000,font-weight:bold
+    style S3Output fill:#ff9900,color:#000,font-weight:bold
+    style Lambda fill:#f90,color:#000,font-weight:bold
+    style DynamoDB fill:#4a90d9,color:#fff,font-weight:bold
+```
+
+### 📝 Registro no DynamoDB
+
+Uma prática comum ao processar arquivos via Lambda é **registrar os metadados de cada execução no DynamoDB**, criando um histórico auditável:
+
+| Campo | Descrição | Exemplo |
+|---|---|---|
+| `fileId` (PK) | Identificador único do arquivo | `img_20240610_abc123` |
+| `bucketName` | Bucket de origem | `meu-bucket-input` |
+| `objectKey` | Caminho do objeto no S3 | `uploads/foto.jpg` |
+| `fileSize` | Tamanho em bytes | `204800` |
+| `processedAt` | Timestamp do processamento | `2024-06-10T14:32:00Z` |
+| `status` | Resultado do processamento | `SUCCESS` / `ERROR` |
+
+### 🧪 Etapas Práticas — Upload com Processamento e Registro
+
+| Etapa | Ação | Serviço / Ferramenta |
+|---|---|---|
+| 1 | Criar bucket S3 de input e output | Amazon S3 |
+| 2 | Criar tabela DynamoDB para registro | Amazon DynamoDB |
+| 3 | Criar role IAM com permissões S3 + DynamoDB | AWS IAM |
+| 4 | Desenvolver e implantar a função Lambda | AWS Lambda |
+| 5 | Configurar trigger S3 na função (evento `s3:ObjectCreated:*`) | Amazon S3 → Lambda |
+| 6 | Fazer upload de arquivo de teste no bucket de input | AWS Console / CLI |
+| 7 | Verificar logs de execução no CloudWatch | Amazon CloudWatch |
+| 8 | Confirmar registro criado na tabela DynamoDB | Amazon DynamoDB |
+
+📚 **Referências:** [Tutoriais S3 + Lambda](https://docs.aws.amazon.com/lambda/latest/dg/with-s3-example.html) · [DynamoDB Developer Guide](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/)
+
+---
+
+## 🔭 S3 Object Lambda — Transformação em Tempo Real
+
+O **S3 Object Lambda** permite adicionar código (via AWS Lambda) para processar e transformar dados **no momento em que são recuperados do S3**, sem necessidade de duplicar dados ou criar cópias transformadas. A transformação acontece inline, entre o S3 e o cliente solicitante.
+
+**Casos de uso comuns:**
+- Redimensionar imagens dinamicamente conforme o tamanho solicitado
+- Mascarar dados sensíveis (PII) retornados para determinados usuários
+- Converter formatos de arquivo (ex.: JSON → CSV) em tempo real
+- Enriquecer objetos com dados de outras fontes antes da entrega
+
+### 🔄 Fluxo do S3 Object Lambda
+
+```mermaid
+flowchart LR
+    Client(["👤 Aplicação"]) -->|"GET objeto"| AccessPoint["🔗 S3 Object Lambda
+Access Point"]
+    AccessPoint -->|"Invoca função"| Lambda["λ Lambda
+(Transforma objeto)"]
+    Lambda -->|"Lê objeto original"| S3[("🪣 S3 Bucket")]
+    Lambda -->|"Retorna objeto
+transformado"| AccessPoint
+    AccessPoint -->|"Entrega resultado"| Client
+
+    S3Standard(["👤 Aplicação (acesso direto)"]) -->|"GET objeto"| S3Direct[("🪣 S3 Bucket
+(sem transformação)")]
+
+    style AccessPoint fill:#e535ab,color:#fff,font-weight:bold
+    style Lambda fill:#ff9900,color:#000,font-weight:bold
+    style S3 fill:#ff9900,color:#000,font-weight:bold
+```
+
+### 🆚 S3 Padrão vs S3 Object Lambda
+
+| Critério | S3 Padrão | S3 Object Lambda |
+|---|---|---|
+| Transformação de dados | ❌ Não | ✅ Sim (via Lambda) |
+| Múltiplas visões do mesmo dado | ❌ Requer cópias | ✅ Uma fonte, N visões |
+| Latência | 🟢 Mínima | 🟡 Adiciona tempo da Lambda |
+| Custo adicional | 💲 Apenas S3 | 💲 S3 + Lambda + Access Point |
+| Maskara de PII em tempo real | ❌ Não | ✅ Sim |
+| Provisionamento de infra | ✅ Zero | ✅ Zero |
+
+📚 **Referências:** [S3 Object Lambda Docs](https://docs.aws.amazon.com/AmazonS3/latest/userguide/transforming-objects.html) · [Automatizar S3 Object Lambda com CloudFormation](https://aws.amazon.com/blogs/aws/automate-the-s3-object-lambda-setup-with-an-aws-cloudformation-template/)
+
+---
+
+## 🖥️ LocalStack — Desenvolvimento e Testes Locais
+
+O **LocalStack** é uma plataforma de desenvolvimento em nuvem que emula os serviços da AWS localmente na sua máquina. Ele permite desenvolver e testar aplicações AWS sem custos reais, sem acesso à internet e com feedback imediato.
+
+**Serviços emulados relevantes para este módulo:** S3, Lambda, DynamoDB, SQS, SNS, IAM, CloudFormation.
+
+### ⚙️ Configuração e Comandos Essenciais
+
+```bash
+# Instalar LocalStack via pip
+pip install localstack
+
+# Iniciar LocalStack (via Docker)
+localstack start
+
+# Configurar AWS CLI para usar LocalStack (endpoint local)
+aws configure set aws_access_key_id "test"
+aws configure set aws_secret_access_key "test"
+aws configure set region "us-east-1"
+
+# Criar bucket S3 localmente
+aws --endpoint-url=http://localhost:4566 s3 mb s3://meu-bucket-local
+
+# Listar buckets locais
+aws --endpoint-url=http://localhost:4566 s3 ls
+
+# Fazer upload de arquivo
+aws --endpoint-url=http://localhost:4566 s3 cp arquivo.txt s3://meu-bucket-local/
+
+# Criar função Lambda localmente
+aws --endpoint-url=http://localhost:4566 lambda create-function \
+  --function-name minha-funcao \
+  --runtime python3.12 \
+  --role arn:aws:iam::000000000000:role/lambda-role \
+  --handler handler.lambda_handler \
+  --zip-file fileb://function.zip
+
+# Invocar função Lambda localmente
+aws --endpoint-url=http://localhost:4566 lambda invoke \
+  --function-name minha-funcao \
+  --payload '{"key": "value"}' \
+  output.json
+
+# Criar tabela DynamoDB localmente
+aws --endpoint-url=http://localhost:4566 dynamodb create-table \
+  --table-name registros-arquivos \
+  --attribute-definitions AttributeName=fileId,AttributeType=S \
+  --key-schema AttributeName=fileId,KeyType=HASH \
+  --billing-mode PAY_PER_REQUEST
+```
+
+### 🔄 Fluxo de Trabalho com LocalStack
+
+```mermaid
+flowchart TD
+    Dev(["👨‍💻 Desenvolvedor"]) -->|"localstack start"| LS["🖥️ LocalStack
+(Docker Container)"]
+    LS --> S3L[("🪣 S3 Local
+localhost:4566")]
+    LS --> LambdaL["λ Lambda Local
+localhost:4566"]
+    LS --> DynL[("🗄️ DynamoDB Local
+localhost:4566")]
+
+    Dev -->|"aws --endpoint-url=
+http://localhost:4566"| AWSCLI["⌨️ AWS CLI
+(aponta para LocalStack)"]
+    AWSCLI --> S3L
+    AWSCLI --> LambdaL
+    AWSCLI --> DynL
+
+    S3L -->|"Evento ObjectCreated"| LambdaL
+    LambdaL -->|"Registra metadados"| DynL
+
+    Dev -->|"Testa, ajusta, itera"| Dev
+
+    style LS fill:#4a90d9,color:#fff,font-weight:bold
+    style S3L fill:#ff9900,color:#000,font-weight:bold
+    style LambdaL fill:#ff9900,color:#000,font-weight:bold
+    style DynL fill:#4a90d9,color:#fff,font-weight:bold
+```
+
+> **Insight:** O LocalStack elimina o ciclo de **deploy → testar → corrigir → deploy** na nuvem real, reduzindo drasticamente o tempo de desenvolvimento e os custos. Todo o fluxo S3 → Lambda → DynamoDB pode ser validado localmente antes de qualquer deploy em produção.
+
+📚 **Referências:** [LocalStack Docs](https://docs.localstack.cloud/) · [LocalStack GitHub](https://github.com/localstack/localstack) · [AWS CLI com LocalStack](https://docs.localstack.cloud/user-guide/integrations/aws-cli/)
